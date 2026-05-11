@@ -1,0 +1,78 @@
+# 忽略临时测试目录
+temp/
+
+# =========================
+# Python & Backend
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.env
+.env.*
+!.env.example
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# SQLite Databases (用于 LangGraph Checkpointer 等)
+*.sqlite3
+*.sqlite
+*.db
+
+# =========================
+# Node & Frontend (Vue 3)
+# =========================
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/coverage/
+frontend/.npm/
+# 日志文件
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# IDEs & Editors
+# =========================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# =========================
+# OS Generated Files
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
