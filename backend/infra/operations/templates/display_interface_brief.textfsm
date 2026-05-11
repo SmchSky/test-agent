@@ -1,0 +1,10 @@
+Value INTERFACE (\S+)
+Value PHY_STATUS (\S+)
+Value PROTOCOL_STATUS (\S+)
+Value IN_UTIL (\S+)
+Value OUT_UTIL (\S+)
+Value IN_ERRORS (\d+)
+Value OUT_ERRORS (\d+)
+
+Start
+  ^${INTERFACE}\s+${PHY_STATUS}\s+${PROTOCOL_STATUS}\s+${IN_UTIL}\s+${OUT_UTIL}\s+${IN_ERRORS}\s+${OUT_ERRORS}\s*$$ -> Record

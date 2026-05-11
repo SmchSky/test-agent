@@ -1,0 +1,8 @@
+Value CYCLE (\d+)
+Value SERVICE_TYPE (\S+)
+Value CPU_USAGE (\d+%)
+Value MAX_USAGE (\d+%)
+
+Start
+  ^CPU Usage Stat. Cycle:\s+${CYCLE}
+  ^${SERVICE_TYPE}\s+${CPU_USAGE}\s+${MAX_USAGE}\s*$$ -> Record

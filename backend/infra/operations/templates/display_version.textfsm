@@ -1,0 +1,11 @@
+Value SOFTWARE_VERSION (.+)
+Value VRP_VERSION (.+)
+Value PRODUCT_NAME (\S+)
+Value UPTIME (.+)
+Value PATCH_VERSION (.+)
+
+Start
+  ^.*VRP \(R\) software,\s+Version\s+${VRP_VERSION} -> Continue
+  ^.*Version\s+\S+\s+\(${PRODUCT_NAME}\s+${SOFTWARE_VERSION}\)
+  ^.*uptime is\s+${UPTIME}
+  ^Patch Version:\s+${PATCH_VERSION}

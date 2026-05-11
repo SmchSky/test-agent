@@ -1,0 +1,39 @@
+[tool.poetry]
+name = "test-agent-backend"
+version = "0.1.0"
+description = "Test Agent — 基于 LLM 的智能路由器测试 Agent 后端服务"
+authors = ["Test Agent Team"]
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.136.1"
+uvicorn = { extras = ["standard"], version = "^0.46.0" }
+langgraph = "^1.1.10"
+pydantic = "^2.13.4"
+PyYAML = "^6.0.0"
+loguru = "^0.7.3"
+textfsm = "^2.1.0"
+scrapli = { extras = ["asyncssh"], version = "^2026.2.20" }
+scrapli-community = "^2025.1.30"
+asyncssh = "^2.22.0"
+zai-sdk = "^0.2.2"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.3"
+pytest-asyncio = "^1.3.0"
+ruff = "^0.15.12"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+python_files = ["test_*.py"]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
