@@ -384,37 +384,19 @@ version: "1.0"
 # 设备定义
 devices:
   - name: R1
-    type: router              # router / switch / firewall
-    vendor: huawei            # huawei / cisco / ...
+    type: router              # router / switch / tester / ...
     model: NE40E              # 设备型号
-    management:
-      protocol: ssh           # ssh / telnet / netconf
-      host: 10.10.10.1
-      port: 22
-      username: huawei
-      password: Huawei@123
+    management-ip: 10.10.10.1
 
   - name: R2
     type: router
-    vendor: huawei
     model: NE40E
-    management:
-      protocol: ssh
-      host: 10.10.10.2
-      port: 22
-      username: huawei
-      password: Huawei@123
+    management-ip: 10.10.10.2
 
   - name: R3
     type: router
-    vendor: huawei
     model: NE40E
-    management:
-      protocol: ssh
-      host: 10.10.10.3
-      port: 22
-      username: huawei
-      password: Huawei@123
+    management-ip: 10.10.10.3
 
 # 互联关系
 links:
