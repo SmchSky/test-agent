@@ -458,6 +458,13 @@ links:
 
 ## 6. 系统架构约束
 
+### 6.0 架构总览
+
+![系统架构图](images/system-architecture.png)
+
+系统采用 **七层分层架构**，自上而下为：前端层（Vue 3）→ 通信层（REST + WebSocket）→ 后端层（FastAPI）→ Agent 引擎层（LangGraph ReAct）→ 工具层（4 个 Tool）→
+基础设施层（复用 TTools Transport + Operations + 连接池）→ 外部系统（PostgreSQL + LLM API + 路由器设备）。
+
 ### 6.1 部署约束
 
 | 约束       | 说明                                          |
