@@ -1111,6 +1111,30 @@ files = [
 typing-extensions = ">=4.14.1"
 
 [[package]]
+name = "pydantic-settings"
+version = "2.14.1"
+description = "Settings management using Pydantic"
+optional = false
+python-versions = ">=3.10"
+groups = ["main"]
+files = [
+    { file = "pydantic_settings-2.14.1-py3-none-any.whl", hash = "sha256:6e3c7edfd8277687cdc598f56e5cff0e9bfff0910a3749deaa8d4401c3a2b9de" },
+    { file = "pydantic_settings-2.14.1.tar.gz", hash = "sha256:e874d3bec7e787b0c9958277956ed9b4dd5de6a80e162188fdaff7c5e26fd5fa" },
+]
+
+[package.dependencies]
+pydantic = ">=2.7.0"
+python-dotenv = ">=0.21.0"
+typing-inspection = ">=0.4.0"
+
+[package.extras]
+aws-secrets-manager = ["boto3 (>=1.35.0)", "types-boto3[secretsmanager]"]
+azure-key-vault = ["azure-identity (>=1.16.0)", "azure-keyvault-secrets (>=4.8.0)"]
+gcp-secret-manager = ["google-cloud-secret-manager (>=2.23.1)"]
+toml = ["tomli (>=2.0.1)"]
+yaml = ["pyyaml (>=6.0.1)"]
+
+[[package]]
 name = "pygments"
 version = "2.20.0"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -2127,6 +2151,18 @@ files = [
 ]
 
 [[package]]
+name = "zai"
+version = "0.0.2"
+description = "zai placeholder package"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    { file = "zai-0.0.2-py2-none-any.whl", hash = "sha256:e67482d8090e58da7286472e7d109182b65b0677f385b623fbc1ba93e70bbf09" },
+    { file = "zai-0.0.2.tar.gz", hash = "sha256:9abe369c3a653d4a8c325551d6e0539c047e567c6862fd0c73f5d3acfa8acb94" },
+]
+
+[[package]]
 name = "zai-sdk"
 version = "0.2.2"
 description = "A SDK library for accessing big model apis from Z.ai"
@@ -2261,4 +2297,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "60e970532f5aabfb40878b3a3becf14c3d6b9715a195dc99d045d347cca8bc2e"
+content-hash = "2d9722edf62994a599ddf972574930afb7bcbc7e3187b956e9420acdf6ff77a1"

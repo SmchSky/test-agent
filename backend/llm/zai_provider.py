@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
+from zai import ZhipuAiClient
+
 from core.config import settings
 from llm.base import LLMProvider, LLMResponse
 from tools.base import ToolCall
@@ -12,12 +14,6 @@ class ZaiLLMProvider(LLMProvider):
     """智谱 GLM Provider using the official zai-sdk client."""
 
     def __init__(self) -> None:
-        if not settings.zai_api_key:
-            raise ValueError("LLM_PROVIDER=zai 时必须设置 ZAI_API_KEY")
-        try:
-            from zai import ZhipuAiClient
-        except Exception as exc:  # noqa: BLE001
-            raise RuntimeError("未安装 zai-sdk，无法使用智谱 GLM Provider") from exc
         self._client = ZhipuAiClient(api_key=settings.zai_api_key)
 
     async def complete(
@@ -34,15 +30,21 @@ class ZaiLLMProvider(LLMProvider):
             return self._client.chat.completions.create(
                 model=settings.zai_model,
                 messages=payload_messages,
+                thinking={
+                    "type": "enabled",
+                },
                 tools=tools,
                 tool_choice="auto",
                 timeout=settings.zai_timeout_seconds,
+                max_tokens=65536,
+                temperature=1.0
             )
 
         response = await asyncio.to_thread(call_api)
         return self._parse_response(response)
 
-    def _normalise_messages(self, messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    @staticmethod
+    def _normalise_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
         normalised: list[dict[str, Any]] = []
         for message in messages:
             role = message.get("role")

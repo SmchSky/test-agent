@@ -1,50 +1,75 @@
+"""
+全局配置。
+
+加载优先级（高 → 低）：
+  1. 操作系统环境变量
+  2. backend/.env 文件
+  3. 字段默认值
+
+使用 pydantic-settings 的 BaseSettings，天然支持 .env 文件与环境变量覆盖。
+"""
+
 from __future__ import annotations
 
-import os
-from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-def _bool_env(name: str, default: bool) -> bool:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    return value.strip().lower() in {"1", "true", "yes", "on"}
+# backend/ 根目录
+_BASE_DIR = Path(__file__).resolve().parents[1]
 
 
-@dataclass(frozen=True)
-class Settings:
+class Settings(BaseSettings):
+    """应用配置，通过 .env 文件 + 环境变量加载。"""
+
+    model_config = SettingsConfigDict(
+        env_file=_BASE_DIR / ".env",
+        env_file_encoding="utf-8",
+        # 环境变量不区分大小写
+        case_sensitive=False,
+        # 如果字段在 .env 中没有定义，使用默认值；不报错
+        extra="ignore",
+    )
+
+    # ---------- 应用 ----------
     app_name: str = "Test Agent"
-    app_env: str = os.getenv("APP_ENV", "dev")
-    debug: bool = _bool_env("DEBUG", True)
+    app_env: str = "dev"
+    debug: bool = True
 
-    base_dir: Path = Path(__file__).resolve().parents[1]
-    topology_seed_path: Path = Path(
-        os.getenv(
-            "TOPOLOGY_SEED_PATH",
-            str(Path(__file__).resolve().parents[1] / "seeds" / "ospf_basic.yml"),
-        )
-    )
+    # ---------- 拓扑 ----------
+    topology_seed_path: Path = _BASE_DIR / "seeds" / "ospf_basic.yml"
 
-    transport_mode: str = os.getenv("TRANSPORT_MODE", "mock")
-    transport_idle_ttl: float = float(os.getenv("TRANSPORT_IDLE_TTL", "300"))
-    transport_reap_interval: float = float(os.getenv("TRANSPORT_REAP_INTERVAL", "60"))
-    device_ssh_username: str = os.getenv("DEVICE_SSH_USERNAME", "")
-    device_ssh_password: str = os.getenv("DEVICE_SSH_PASSWORD", "")
-    device_ssh_port: int = int(os.getenv("DEVICE_SSH_PORT", "22"))
+    # ---------- 设备传输层 ----------
+    transport_mode: str = "mock"
+    transport_idle_ttl: float = 300
+    transport_reap_interval: float = 60
+    device_ssh_username: str = ""
+    device_ssh_password: str = ""
+    device_ssh_port: int = 22
 
-    llm_provider: str = os.getenv("LLM_PROVIDER", "mock")
-    max_turns: int = int(os.getenv("MAX_TURNS", "30"))
-    context_char_limit: int = int(os.getenv("CONTEXT_CHAR_LIMIT", "120000"))
-    keep_recent_tool_results: int = int(os.getenv("KEEP_RECENT_TOOL_RESULTS", "4"))
+    # ---------- Agent ----------
+    llm_provider: str = "mock"
+    max_turns: int = 30
+    context_char_limit: int = 120_000
+    keep_recent_tool_results: int = 4
 
-    zai_api_key: str = os.getenv("ZAI_API_KEY", "")
-    zai_base_url: str = os.getenv(
-        "ZAI_BASE_URL",
-        "https://open.bigmodel.cn/api/paas/v4/",
-    )
-    zai_model: str = os.getenv("ZAI_MODEL", "glm-5.1")
-    zai_timeout_seconds: float = float(os.getenv("ZAI_TIMEOUT_SECONDS", "120"))
+    # ---------- 智谱 AI ----------
+    zai_api_key: str = ""
+    zai_model: str = "glm-5.1"
+    zai_timeout_seconds: float = 120
+
+    @property
+    def base_dir(self) -> Path:
+        """返回 backend/ 根目录。"""
+        return _BASE_DIR
 
 
-settings = Settings()
+@lru_cache(maxsize=1)
+def _get_settings() -> Settings:
+    """单例 + 懒加载，确保整个进程共用同一份配置。"""
+    return Settings()
+
+
+# 对外暴露的单例，与原有 `from core.config import settings` 完全兼容
+settings: Settings = _get_settings()

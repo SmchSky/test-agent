@@ -89,7 +89,6 @@ VITE v6.x.x  ready in xxx ms
 |-----------------------|-----------------------------------------|-------------------|
 | `ZAI_API_KEY`         | —                                       | **必填**。智谱 API Key |
 | `ZAI_MODEL`           | `glm-5.1`                               | 模型名称              |
-| `ZAI_BASE_URL`        | `https://open.bigmodel.cn/api/paas/v4/` | API 地址            |
 | `ZAI_TIMEOUT_SECONDS` | `120`                                   | 请求超时              |
 
 ### 真实设备（当 `TRANSPORT_MODE=scrapli` 时）

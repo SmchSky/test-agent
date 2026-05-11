@@ -18,6 +18,8 @@ scrapli = { extras = ["asyncssh"], version = "^2026.2.20" }
 scrapli-community = "^2025.1.30"
 asyncssh = "^2.22.0"
 zai-sdk = "^0.2.2"
+pydantic-settings = "^2.14.1"
+zai = "^0.0.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.3"
