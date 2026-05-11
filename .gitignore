@@ -43,6 +43,9 @@ venv.bak/
 *.sqlite
 *.db
 
+# Ruff
+.ruff_cache/
+
 # =========================
 # Node & Frontend (Vue 3)
 # =========================

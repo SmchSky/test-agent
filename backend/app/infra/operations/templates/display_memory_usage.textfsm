@@ -1,4 +1,0 @@
-Value MEMORY_USAGE_PERCENT (\d+%)
-
-Start
-  ^Memory Using Percentage Is:\s+${MEMORY_USAGE_PERCENT}

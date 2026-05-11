@@ -1,7 +1,0 @@
-Value INTERFACE (\S+)
-Value IP_ADDRESS (\S+)
-Value PHYSICAL_STATUS (\S+)
-Value PROTOCOL_STATUS (\S+)
-
-Start
-  ^${INTERFACE}\s+${IP_ADDRESS}\s+${PHYSICAL_STATUS}\s+${PROTOCOL_STATUS}\s*$$ -> Record

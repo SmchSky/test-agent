@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import pytest
-from app.agent import AgentRunner
-from app.core.config import settings
-from app.infra.transport.pool import TransportPool
-from app.llm.mock_provider import MockLLMProvider
-from app.services.context_window import micro_compact_messages
-from app.services.topology import TopologyService
-from app.tools import build_tool_registry
+
+from agent import AgentRunner
+from core.config import settings
+from infra.transport.pool import TransportPool
+from llm.mock_provider import MockLLMProvider
+from services.context_window import micro_compact_messages
+from services.topology import TopologyService
+from tools import build_tool_registry
 
 
 def test_topology_seed_loads_fixed_ospf_topology() -> None:

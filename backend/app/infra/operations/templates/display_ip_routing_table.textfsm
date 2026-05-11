@@ -1,8 +1,0 @@
-Value ROUTING_TABLE (\S+)
-Value DESTINATIONS (\d+)
-Value TOTAL_ROUTES (\d+)
-
-Start
-  ^Routing Tables:\s+${ROUTING_TABLE}
-  ^\s+Destinations\s*:\s+${DESTINATIONS}
-  ^Total\s*:\s+${TOTAL_ROUTES}
