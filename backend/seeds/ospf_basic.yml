@@ -12,8 +12,8 @@ devices:
       protocol: ssh           # ssh / telnet / netconf
       host: 10.10.10.1
       port: 22
-      username: admin
-      password: "${R1_PASSWORD}"  # 支持环境变量引用
+      username: huawei
+      password: Huawei@123
 
   - name: R2
     type: router
@@ -23,8 +23,8 @@ devices:
       protocol: ssh
       host: 10.10.10.2
       port: 22
-      username: admin
-      password: "${R2_PASSWORD}"
+      username: huawei
+      password: Huawei@123
 
   - name: R3
     type: router
@@ -34,8 +34,8 @@ devices:
       protocol: ssh
       host: 10.10.10.3
       port: 22
-      username: admin
-      password: "${R3_PASSWORD}"
+      username: huawei
+      password: Huawei@123
 
 # 互联关系
 links:
