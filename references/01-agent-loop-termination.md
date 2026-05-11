@@ -27,17 +27,17 @@ QueryEngine.submitMessage()
 ```typescript
 // query.ts — queryLoop 简化骨架
 async function* queryLoop(params, consumedCommandUuids) {
-  let state: State = { turnCount: 1, ... };
+    let state: State = {turnCount: 1, ...};
 
-  while (true) {
-    // 1. 上下文压缩（snip → microcompact → contextCollapse → autoCompact）
-    // 2. 阻塞限制检查（token 超限时直接 return）
-    // 3. 调用 LLM（streaming）
-    // 4. 处理 LLM 响应
-    // 5. 如果没有 tool_use → 进入终止判断逻辑
-    // 6. 如果有 tool_use → 执行工具 → 检查中断/maxTurns → continue
-    state = next;
-  }
+    while (true) {
+        // 1. 上下文压缩（snip → microcompact → contextCollapse → autoCompact）
+        // 2. 阻塞限制检查（token 超限时直接 return）
+        // 3. 调用 LLM（streaming）
+        // 4. 处理 LLM 响应
+        // 5. 如果没有 tool_use → 进入终止判断逻辑
+        // 6. 如果有 tool_use → 执行工具 → 检查中断/maxTurns → continue
+        state = next;
+    }
 }
 ```
 
@@ -98,12 +98,12 @@ async function* queryLoop(params, consumedCommandUuids) {
 ```typescript
 const nextTurnCount = turnCount + 1;
 if (maxTurns && nextTurnCount > maxTurns) {
-  yield createAttachmentMessage({
-    type: 'max_turns_reached',
-    maxTurns,
-    turnCount: nextTurnCount,
-  });
-  return { reason: 'max_turns', turnCount: nextTurnCount };
+    yield createAttachmentMessage({
+        type: 'max_turns_reached',
+        maxTurns,
+        turnCount: nextTurnCount,
+    });
+    return {reason: 'max_turns', turnCount: nextTurnCount};
 }
 ```
 
@@ -112,15 +112,16 @@ if (maxTurns && nextTurnCount > maxTurns) {
 **QueryEngine 侧的处理** (`QueryEngine.ts:842-874`):
 
 ```typescript
-else if (message.attachment.type === 'max_turns_reached') {
-  yield {
-    type: 'result',
-    subtype: 'error_max_turns',   // ← 明确的错误子类型
-    is_error: true,
-    num_turns: message.attachment.turnCount,
-    errors: [`Reached maximum number of turns (${message.attachment.maxTurns})`],
-  };
-  return;
+else
+if (message.attachment.type === 'max_turns_reached') {
+    yield {
+        type: 'result',
+        subtype: 'error_max_turns',   // ← 明确的错误子类型
+        is_error: true,
+        num_turns: message.attachment.turnCount,
+        errors: [`Reached maximum number of turns (${message.attachment.maxTurns})`],
+    };
+    return;
 }
 ```
 
@@ -136,13 +137,13 @@ else if (message.attachment.type === 'max_turns_reached') {
 
 ```typescript
 if (maxBudgetUsd !== undefined && getTotalCost() >= maxBudgetUsd) {
-  yield {
-    type: 'result',
-    subtype: 'error_max_budget_usd',
-    is_error: true,
-    errors: [`Reached maximum budget ($${maxBudgetUsd})`],
-  };
-  return;
+    yield {
+        type: 'result',
+        subtype: 'error_max_budget_usd',
+        is_error: true,
+        errors: [`Reached maximum budget ($${maxBudgetUsd})`],
+    };
+    return;
 }
 ```
 
@@ -156,18 +157,18 @@ if (maxBudgetUsd !== undefined && getTotalCost() >= maxBudgetUsd) {
 
 ```typescript
 if (toolUseContext.abortController.signal.aborted) {
-  if (streamingToolExecutor) {
-    // 消费剩余结果 — executor 为中止的工具生成合成 tool_results
-    for await (const update of streamingToolExecutor.getRemainingResults()) {
-      if (update.message) yield update.message;
+    if (streamingToolExecutor) {
+        // 消费剩余结果 — executor 为中止的工具生成合成 tool_results
+        for await (const update of streamingToolExecutor.getRemainingResults()) {
+            if (update.message) yield update.message;
+        }
+    } else {
+        yield * yieldMissingToolResultBlocks(assistantMessages, 'Interrupted by user');
     }
-  } else {
-    yield* yieldMissingToolResultBlocks(assistantMessages, 'Interrupted by user');
-  }
-  if (toolUseContext.abortController.signal.reason !== 'interrupt') {
-    yield createUserInterruptionMessage({ toolUse: false });
-  }
-  return { reason: 'aborted_streaming' };
+    if (toolUseContext.abortController.signal.reason !== 'interrupt') {
+        yield createUserInterruptionMessage({toolUse: false});
+    }
+    return {reason: 'aborted_streaming'};
 }
 ```
 
@@ -175,14 +176,14 @@ if (toolUseContext.abortController.signal.aborted) {
 
 ```typescript
 if (toolUseContext.abortController.signal.aborted) {
-  if (toolUseContext.abortController.signal.reason !== 'interrupt') {
-    yield createUserInterruptionMessage({ toolUse: true });
-  }
-  // 即使中断也检查 maxTurns
-  if (maxTurns && nextTurnCountOnAbort > maxTurns) {
-    yield createAttachmentMessage({ type: 'max_turns_reached', ... });
-  }
-  return { reason: 'aborted_tools' };
+    if (toolUseContext.abortController.signal.reason !== 'interrupt') {
+        yield createUserInterruptionMessage({toolUse: true});
+    }
+    // 即使中断也检查 maxTurns
+    if (maxTurns && nextTurnCountOnAbort > maxTurns) {
+        yield createAttachmentMessage({type: 'max_turns_reached', ...});
+    }
+    return {reason: 'aborted_tools'};
 }
 ```
 
@@ -210,21 +211,22 @@ const MAX_OUTPUT_TOKENS_RECOVERY_LIMIT = 3;
 
 // 第1步：升级
 if (capEnabled && maxOutputTokensOverride === undefined) {
-  state = { ...state, maxOutputTokensOverride: ESCALATED_MAX_TOKENS };
-  continue; // 不终止，继续循环
+    state = {...state, maxOutputTokensOverride: ESCALATED_MAX_TOKENS};
+    continue; // 不终止，继续循环
 }
 
 // 第2步：注入恢复消息
 if (maxOutputTokensRecoveryCount < MAX_OUTPUT_TOKENS_RECOVERY_LIMIT) {
-  const recoveryMessage = createUserMessage({
-    content: 'Output token limit hit. Resume directly — no apology, no recap...',
-    isMeta: true,
-  });
-  state = { ...state,
-    messages: [...messagesForQuery, ...assistantMessages, recoveryMessage],
-    maxOutputTokensRecoveryCount: maxOutputTokensRecoveryCount + 1,
-  };
-  continue; // 不终止，继续循环
+    const recoveryMessage = createUserMessage({
+        content: 'Output token limit hit. Resume directly — no apology, no recap...',
+        isMeta: true,
+    });
+    state = {
+        ...state,
+        messages: [...messagesForQuery, ...assistantMessages, recoveryMessage],
+        maxOutputTokensRecoveryCount: maxOutputTokensRecoveryCount + 1,
+    };
+    continue; // 不终止，继续循环
 }
 
 // 第3步：恢复耗尽，表面化
@@ -239,16 +241,16 @@ yield lastMessage;
 if (!compactionResult && querySource !== 'compact' && querySource !== 'session_memory'
     && !(reactiveCompact?.isReactiveCompactEnabled() && isAutoCompactEnabled())
     && !collapseOwnsIt) {
-  const { isAtBlockingLimit } = calculateTokenWarningState(
-    tokenCountWithEstimation(messagesForQuery) - snipTokensFreed,
-    toolUseContext.options.mainLoopModel,
-  );
-  if (isAtBlockingLimit) {
-    yield createAssistantAPIErrorMessage({
-      content: PROMPT_TOO_LONG_ERROR_MESSAGE,
-    });
-    return { reason: 'blocking_limit' };
-  }
+    const {isAtBlockingLimit} = calculateTokenWarningState(
+        tokenCountWithEstimation(messagesForQuery) - snipTokensFreed,
+        toolUseContext.options.mainLoopModel,
+    );
+    if (isAtBlockingLimit) {
+        yield createAssistantAPIErrorMessage({
+            content: PROMPT_TOO_LONG_ERROR_MESSAGE,
+        });
+        return {reason: 'blocking_limit'};
+    }
 }
 ```
 
@@ -263,11 +265,11 @@ if (!compactionResult && querySource !== 'compact' && querySource !== 'session_m
 
 ```typescript
 type SDKResultSubtype =
-  | 'success'                              // 正常完成
-  | 'error_max_turns'                      // 达到最大轮次
-  | 'error_max_budget_usd'                // 达到费用上限
-  | 'error_max_structured_output_retries' // 结构化输出重试耗尽
-  | 'error_during_execution'              // 执行中错误（兜底）
+    | 'success'                              // 正常完成
+    | 'error_max_turns'                      // 达到最大轮次
+    | 'error_max_budget_usd'                // 达到费用上限
+    | 'error_max_structured_output_retries' // 结构化输出重试耗尽
+    | 'error_during_execution'              // 执行中错误（兜底）
 ```
 
 ### 4.2 统一的结果元数据
@@ -276,14 +278,26 @@ type SDKResultSubtype =
 
 ```typescript
 {
-  duration_ms: number,        // 总耗时
-  duration_api_ms: number,    // API 调用耗时
-  num_turns: number,          // 执行轮次数
-  total_cost_usd: number,     // 总费用
-  usage: NonNullableUsage,    // Token 用量
-  permission_denials: [],     // 权限拒绝记录
-  stop_reason: string | null, // LLM 的 stop_reason
-  errors?: string[],          // 错误详情（仅错误类型）
+    duration_ms: number,        // 总耗时
+        duration_api_ms
+:
+    number,    // API 调用耗时
+        num_turns
+:
+    number,          // 执行轮次数
+        total_cost_usd
+:
+    number,     // 总费用
+        usage
+:
+    NonNullableUsage,    // Token 用量
+        permission_denials
+:
+    [],     // 权限拒绝记录
+        stop_reason
+:
+    string | null, // LLM 的 stop_reason
+        errors ? : string[],          // 错误详情（仅错误类型）
 }
 ```
 
@@ -306,9 +320,9 @@ const COMPLETION_THRESHOLD = 0.9;
 const DIMINISHING_THRESHOLD = 500;
 
 const isDiminishing =
-  tracker.continuationCount >= 3 &&
-  deltaSinceLastCheck < DIMINISHING_THRESHOLD &&
-  tracker.lastDeltaTokens < DIMINISHING_THRESHOLD;
+    tracker.continuationCount >= 3 &&
+    deltaSinceLastCheck < DIMINISHING_THRESHOLD &&
+    tracker.lastDeltaTokens < DIMINISHING_THRESHOLD;
 ```
 
 如果连续 3 次以上的循环中，每次的 token 增量都低于 500，判定为低效重复，自动停止。
@@ -337,15 +351,15 @@ const MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3;
 class TerminationReason(Enum):
     # 最高优先级 — 每轮循环开始前检查
     CONTEXT_OVERFLOW = "context_overflow"
-    
+
     # 高优先级 — 异常和中断
     USER_ABORT = "user_abort"
     API_ERROR = "api_error"
-    
+
     # 中优先级 — 资源限制
     MAX_TURNS = "max_turns"
     MAX_BUDGET = "max_budget"
-    
+
     # 低优先级 — 正常完成
     TASK_COMPLETED = "task_completed"
     DIMINISHING_RETURNS = "diminishing_returns"
@@ -358,7 +372,7 @@ while True:
     # ===== 循环开始前检查 =====
     if context_tokens > blocking_limit:
         return TerminationReason.CONTEXT_OVERFLOW
-    
+
     # ===== LLM 调用 =====
     try:
         response = call_llm(messages)
@@ -366,14 +380,14 @@ while True:
         return TerminationReason.USER_ABORT
     except APIError:
         return TerminationReason.API_ERROR
-    
+
     # ===== 响应后检查 =====
     if not response.has_tool_calls:
         return TerminationReason.TASK_COMPLETED
-    
+
     # ===== 工具执行 =====
     results = execute_tools(response.tool_calls)
-    
+
     # ===== 工具执行后检查 =====
     turn_count += 1
     if max_turns and turn_count > max_turns:

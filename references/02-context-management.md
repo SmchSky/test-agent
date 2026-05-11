@@ -39,12 +39,12 @@ Claude Code 的决策高度依赖精确的 Token 计算。`src/utils/tokens.ts` 
 const MAX_OUTPUT_TOKENS_FOR_SUMMARY = 20_000
 
 export function getEffectiveContextWindowSize(model: string): number {
-  const reservedTokens = Math.min(
-    getMaxOutputTokensForModel(model),
-    MAX_OUTPUT_TOKENS_FOR_SUMMARY,
-  )
-  let contextWindow = getContextWindowForModel(model) // 默认 200,000
-  return contextWindow - reservedTokens
+    const reservedTokens = Math.min(
+        getMaxOutputTokensForModel(model),
+        MAX_OUTPUT_TOKENS_FOR_SUMMARY,
+    )
+    let contextWindow = getContextWindowForModel(model) // 默认 200,000
+    return contextWindow - reservedTokens
 }
 ```
 
@@ -59,7 +59,7 @@ export const ERROR_THRESHOLD_BUFFER_TOKENS = 20_000
 export const MANUAL_COMPACT_BUFFER_TOKENS = 3_000
 
 export function getAutoCompactThreshold(model: string): number {
-  return getEffectiveContextWindowSize(model) - AUTOCOMPACT_BUFFER_TOKENS
+    return getEffectiveContextWindowSize(model) - AUTOCOMPACT_BUFFER_TOKENS
 }
 ```
 
@@ -88,7 +88,8 @@ export function getAutoCompactThreshold(model: string): number {
 ```typescript
 // evaluateTimeBasedTrigger
 const gapMinutes = (Date.now() - new Date(lastAssistant.timestamp).getTime()) / 60_000
-if (gapMinutes > config.gapThresholdMinutes) { ... }
+if (gapMinutes > config.gapThresholdMinutes) { ...
+}
 ```
 
 当用户停顿时间超过阈值（缓存已失效），代码会直接将旧的工具输出（保留最近的 `keepRecent` 个）替换为 `[Old tool result content cleared]`。
@@ -137,7 +138,9 @@ formattedSummary = formattedSummary.replace(/<analysis>[\s\S]*?<\/analysis>/, ''
 
 ```typescript
 // 1. 重新抓取并注入被修改的文件内容
-const fileAttachments = createPostCompactFileAttachments(preCompactReadFileState...);
+const fileAttachments = createPostCompactFileAttachments(preCompactReadFileState
+...)
+;
 // 2. 注入当前的计划 (Plan)
 const planAttachment = createPlanAttachmentIfNeeded(context.agentId);
 // 3. 重新宣告所有工具（因为上文被截断，模型可能忘了当前可用工具）
@@ -150,9 +153,9 @@ const deferredTools = getDeferredToolsDeltaAttachment(...);
 
 ```typescript
 const boundaryMarker = createCompactBoundaryMessage(
-  isAutoCompact ? 'auto' : 'manual',
-  preCompactTokenCount,
-  messages.at(-1)?.uuid
+        isAutoCompact ? 'auto' : 'manual',
+        preCompactTokenCount,
+        messages.at(-1)?.uuid
 )
 ```
 

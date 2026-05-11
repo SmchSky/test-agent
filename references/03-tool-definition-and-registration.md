@@ -24,41 +24,41 @@ TypeScript 对象**，通过 `buildTool()` 工厂函数补全默认值后导出�
 ```typescript
 // src/Tool.ts (简化)
 export type Tool<Input, Output, P> = {
-  // ═══════════ 标识与发现 ═══════════
-  readonly name: string                    // 工具唯一标识符
-  aliases?: string[]                       // 向后兼容的旧名称
-  searchHint?: string                      // ToolSearch 关键词匹配短语
+    // ═══════════ 标识与发现 ═══════════
+    readonly name: string                    // 工具唯一标识符
+    aliases?: string[]                       // 向后兼容的旧名称
+    searchHint?: string                      // ToolSearch 关键词匹配短语
 
-  // ═══════════ Schema 定义 ═══════════
-  readonly inputSchema: Input              // Zod v4 输入验证 schema
-  readonly inputJSONSchema?: ToolInputJSONSchema  // MCP 工具的 JSON Schema
-  outputSchema?: z.ZodType<unknown>        // 输出类型验证
+    // ═══════════ Schema 定义 ═══════════
+    readonly inputSchema: Input              // Zod v4 输入验证 schema
+    readonly inputJSONSchema?: ToolInputJSONSchema  // MCP 工具的 JSON Schema
+    outputSchema?: z.ZodType<unknown>        // 输出类型验证
 
-  // ═══════════ 核心生命周期 ═══════════
-  call(args, context, canUseTool, parentMessage, onProgress): Promise<ToolResult<Output>>
-  validateInput?(input, context): Promise<ValidationResult>
-  checkPermissions(input, context): Promise<PermissionResult>
+    // ═══════════ 核心生命周期 ═══════════
+    call(args, context, canUseTool, parentMessage, onProgress): Promise<ToolResult<Output>>
+    validateInput?(input, context): Promise<ValidationResult>
+    checkPermissions(input, context): Promise<PermissionResult>
 
-  // ═══════════ 行为标记 ═══════════
-  isEnabled(): boolean                     // 运行时启用/禁用
-  isReadOnly(input): boolean               // 是否为只读操作
-  isDestructive?(input): boolean           // 是否为不可逆操作
-  isConcurrencySafe(input): boolean        // 是否可并发执行
-  interruptBehavior?(): 'cancel' | 'block' // 用户中断时的行为
+    // ═══════════ 行为标记 ═══════════
+    isEnabled(): boolean                     // 运行时启用/禁用
+    isReadOnly(input): boolean               // 是否为只读操作
+    isDestructive?(input): boolean           // 是否为不可逆操作
+    isConcurrencySafe(input): boolean        // 是否可并发执行
+    interruptBehavior?(): 'cancel' | 'block' // 用户中断时的行为
 
-  // ═══════════ LLM 交互 ═══════════
-  description(input, options): Promise<string>   // 发送给 LLM 的描述
-  prompt(options): Promise<string>               // 发送给 LLM 的详细提示词
+    // ═══════════ LLM 交互 ═══════════
+    description(input, options): Promise<string>   // 发送给 LLM 的描述
+    prompt(options): Promise<string>               // 发送给 LLM 的详细提示词
 
-  // ═══════════ 输出格式化 ═══════════
-  mapToolResultToToolResultBlockParam(content, toolUseID): ToolResultBlockParam
-  maxResultSizeChars: number               // 超过此值则持久化到磁盘
+    // ═══════════ 输出格式化 ═══════════
+    mapToolResultToToolResultBlockParam(content, toolUseID): ToolResultBlockParam
+    maxResultSizeChars: number               // 超过此值则持久化到磁盘
 
-  // ═══════════ UI 渲染（React/Ink）═══════════
-  renderToolUseMessage(input, options): React.ReactNode
-  renderToolResultMessage?(content, progressMessages, options): React.ReactNode
-  userFacingName(input): string
-  getActivityDescription?(input): string | null
+    // ═══════════ UI 渲染（React/Ink）═══════════
+    renderToolUseMessage(input, options): React.ReactNode
+    renderToolResultMessage?(content, progressMessages, options): React.ReactNode
+    userFacingName(input): string
+    getActivityDescription?(input): string | null
 }
 ```
 
@@ -67,22 +67,22 @@ export type Tool<Input, Output, P> = {
 ```typescript
 // src/Tool.ts:757-792
 const TOOL_DEFAULTS = {
-  isEnabled: () => true,
-  isConcurrencySafe: (_input?) => false,    // 假设不安全
-  isReadOnly: (_input?) => false,           // 假设会写入
-  isDestructive: (_input?) => false,
-  checkPermissions: (input, _ctx?) =>       // 默认放行，交给通用权限系统
-    Promise.resolve({ behavior: 'allow', updatedInput: input }),
-  toAutoClassifierInput: (_input?) => '',   // 默认不参与安全分类
-  userFacingName: (_input?) => '',
+    isEnabled: () => true,
+    isConcurrencySafe: (_input?) => false,    // 假设不安全
+    isReadOnly: (_input?) => false,           // 假设会写入
+    isDestructive: (_input?) => false,
+    checkPermissions: (input, _ctx?) =>       // 默认放行，交给通用权限系统
+        Promise.resolve({behavior: 'allow', updatedInput: input}),
+    toAutoClassifierInput: (_input?) => '',   // 默认不参与安全分类
+    userFacingName: (_input?) => '',
 }
 
 export function buildTool<D extends AnyToolDef>(def: D): BuiltTool<D> {
-  return {
-    ...TOOL_DEFAULTS,
-    userFacingName: () => def.name,  // 默认用 name 作为显示名
-    ...def,                          // 用户定义覆盖默认值
-  } as BuiltTool<D>
+    return {
+        ...TOOL_DEFAULTS,
+        userFacingName: () => def.name,  // 默认用 name 作为显示名
+        ...def,                          // 用户定义覆盖默认值
+    } as BuiltTool<D>
 }
 ```
 
@@ -99,38 +99,49 @@ export function buildTool<D extends AnyToolDef>(def: D): BuiltTool<D> {
 ```typescript
 // src/tools/GrepTool/GrepTool.ts
 export const GrepTool = buildTool({
-  name: GREP_TOOL_NAME,
-  searchHint: 'search file contents with regex (ripgrep)',
-  maxResultSizeChars: 20_000,
-  strict: true,
+    name: GREP_TOOL_NAME,
+    searchHint: 'search file contents with regex (ripgrep)',
+    maxResultSizeChars: 20_000,
+    strict: true,
 
-  // Zod v4 Schema（延迟求值避免模块加载时开销）
-  get inputSchema() { return inputSchema() },
-  get outputSchema() { return outputSchema() },
+    // Zod v4 Schema（延迟求值避免模块加载时开销）
+    get inputSchema() {
+        return inputSchema()
+    },
+    get outputSchema() {
+        return outputSchema()
+    },
 
-  // 行为标记
-  isConcurrencySafe() { return true },     // grep 可以并发
-  isReadOnly() { return true },            // 不修改文件
-  isSearchOrReadCommand() { return { isSearch: true, isRead: false } },
+    // 行为标记
+    isConcurrencySafe() {
+        return true
+    },     // grep 可以并发
+    isReadOnly() {
+        return true
+    },            // 不修改文件
+    isSearchOrReadCommand() {
+        return {isSearch: true, isRead: false}
+    },
 
-  // 权限检查 → 委托给文件系统读权限检查器
-  async checkPermissions(input, context) {
-    return checkReadPermissionForTool(GrepTool, input, context...)
-  },
+    // 权限检查 → 委托给文件系统读权限检查器
+    async checkPermissions(input, context) {
+        return checkReadPermissionForTool(GrepTool, input, context
+    ...)
+    },
 
-  // 输出格式化 → 纯文本
-  mapToolResultToToolResultBlockParam({ numFiles, filenames, content }, toolUseID) {
-    return {
-      tool_use_id: toolUseID,
-      type: 'tool_result',
-      content: `Found ${numFiles} files\n${filenames.join('\n')}`,
-    }
-  },
+    // 输出格式化 → 纯文本
+    mapToolResultToToolResultBlockParam({numFiles, filenames, content}, toolUseID) {
+        return {
+            tool_use_id: toolUseID,
+            type: 'tool_result',
+            content: `Found ${numFiles} files\n${filenames.join('\n')}`,
+        }
+    },
 
-  async call({ pattern, path, ... }, context) {
-    const results = await ripGrep(args, absolutePath, signal)
-    return { data: { filenames: ..., numFiles: ..., content: ... } }
-  },
+    async call({pattern, path, ...}, context) {
+        const results = await ripGrep(args, absolutePath, signal)
+        return {data: {filenames: ..., numFiles: ..., content: ...}}
+    },
 } satisfies ToolDef<InputSchema, Output>)
 ```
 
@@ -139,45 +150,45 @@ export const GrepTool = buildTool({
 ```typescript
 // src/tools/BashTool/BashTool.tsx（简化关键差异）
 export const BashTool = buildTool({
-  name: BASH_TOOL_NAME,
-  maxResultSizeChars: 30_000,
-  strict: true,
+    name: BASH_TOOL_NAME,
+    maxResultSizeChars: 30_000,
+    strict: true,
 
-  // 并发安全取决于命令是否只读
-  isConcurrencySafe(input) {
-    return this.isReadOnly?.(input) ?? false
-  },
-  // 通过静态分析判断命令是否只读
-  isReadOnly(input) {
-    const result = checkReadOnlyConstraints(input, commandHasAnyCd(input.command))
-    return result.behavior === 'allow'
-  },
+    // 并发安全取决于命令是否只读
+    isConcurrencySafe(input) {
+        return this.isReadOnly?.(input) ?? false
+    },
+    // 通过静态分析判断命令是否只读
+    isReadOnly(input) {
+        const result = checkReadOnlyConstraints(input, commandHasAnyCd(input.command))
+        return result.behavior === 'allow'
+    },
 
-  // 专用权限检查（98KB 的 bashPermissions.ts）
-  async checkPermissions(input, context) {
-    return bashToolHasPermission(input, context)
-  },
+    // 专用权限检查（98KB 的 bashPermissions.ts）
+    async checkPermissions(input, context) {
+        return bashToolHasPermission(input, context)
+    },
 
-  // 输入验证：阻止危险的 sleep 模式
-  async validateInput(input) {
-    const sleepPattern = detectBlockedSleepPattern(input.command)
-    if (sleepPattern) return { result: false, message: `Blocked: ${sleepPattern}...` }
-    return { result: true }
-  },
+    // 输入验证：阻止危险的 sleep 模式
+    async validateInput(input) {
+        const sleepPattern = detectBlockedSleepPattern(input.command)
+        if (sleepPattern) return {result: false, message: `Blocked: ${sleepPattern}...`}
+        return {result: true}
+    },
 
-  // 输出：支持图片、后台任务、大文件持久化
-  mapToolResultToToolResultBlockParam(
-    { stdout, stderr, isImage, backgroundTaskId, persistedOutputPath }, id
-  ) {
-    if (isImage) return buildImageToolResult(stdout, id)
-    if (persistedOutputPath) {
-      stdout = buildLargeToolResultMessage({ filepath: persistedOutputPath, ... })
-    }
-    return {
-      tool_use_id: id, type: 'tool_result',
-      content: [stdout, stderr].filter(Boolean).join('\n')
-    }
-  },
+    // 输出：支持图片、后台任务、大文件持久化
+    mapToolResultToToolResultBlockParam(
+        {stdout, stderr, isImage, backgroundTaskId, persistedOutputPath}, id
+    ) {
+        if (isImage) return buildImageToolResult(stdout, id)
+        if (persistedOutputPath) {
+            stdout = buildLargeToolResultMessage({filepath: persistedOutputPath, ...})
+        }
+        return {
+            tool_use_id: id, type: 'tool_result',
+            content: [stdout, stderr].filter(Boolean).join('\n')
+        }
+    },
 })
 ```
 
@@ -192,29 +203,29 @@ Claude Code 采用 **显式导入 + 中央注册表** 的模式，没有自动�
 ```typescript
 // src/tools.ts — 中央注册表
 export function getAllBaseTools(): Tools {
-  return [
-    AgentTool,
-    TaskOutputTool,
-    BashTool,
-    // 条件包含：嵌入式搜索工具可用时不注册 Glob/Grep
-    ...(hasEmbeddedSearchTools() ? [] : [GlobTool, GrepTool]),
-    FileReadTool,
-    FileEditTool,
-    FileWriteTool,
-    // Feature Flag 控制
-    ...(isTodoV2Enabled() ? [TaskCreateTool, TaskGetTool, ...] : []),
-    // 环境变量控制
-    ...(isEnvTruthy(process.env.ENABLE_LSP_TOOL) ? [LSPTool] : []),
-    // 用户类型控制
-    ...(process.env.USER_TYPE === 'ant' ? [ConfigTool, TungstenTool] : []),
-    // Bun 编译期 feature flag（死代码消除）
-    ...(SleepTool ? [SleepTool] : []),      // feature('PROACTIVE')
-    ...(WebBrowserTool ? [WebBrowserTool] : []),  // feature('WEB_BROWSER_TOOL')
-    // 测试专用
-    ...(process.env.NODE_ENV === 'test' ? [TestingPermissionTool] : []),
-    // 动态工具发现
-    ...(isToolSearchEnabledOptimistic() ? [ToolSearchTool] : []),
-  ]
+    return [
+        AgentTool,
+        TaskOutputTool,
+        BashTool,
+        // 条件包含：嵌入式搜索工具可用时不注册 Glob/Grep
+        ...(hasEmbeddedSearchTools() ? [] : [GlobTool, GrepTool]),
+        FileReadTool,
+        FileEditTool,
+        FileWriteTool,
+        // Feature Flag 控制
+        ...(isTodoV2Enabled() ? [TaskCreateTool, TaskGetTool, ...] : []),
+        // 环境变量控制
+        ...(isEnvTruthy(process.env.ENABLE_LSP_TOOL) ? [LSPTool] : []),
+        // 用户类型控制
+        ...(process.env.USER_TYPE === 'ant' ? [ConfigTool, TungstenTool] : []),
+        // Bun 编译期 feature flag（死代码消除）
+        ...(SleepTool ? [SleepTool] : []),      // feature('PROACTIVE')
+        ...(WebBrowserTool ? [WebBrowserTool] : []),  // feature('WEB_BROWSER_TOOL')
+        // 测试专用
+        ...(process.env.NODE_ENV === 'test' ? [TestingPermissionTool] : []),
+        // 动态工具发现
+        ...(isToolSearchEnabledOptimistic() ? [ToolSearchTool] : []),
+    ]
 }
 ```
 
@@ -234,23 +245,23 @@ assembleToolPool(permCtx, mcpTools)  ← 第3层：合并 MCP 工具 + 去重 + 
 
 ```typescript
 export const getTools = (permissionContext: ToolPermissionContext): Tools => {
-  // 简单模式：只保留 Bash + Read + Edit
-  if (isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)) {
-    return filterToolsByDenyRules(
-      [BashTool, FileReadTool, FileEditTool], permissionContext
-    )
-  }
+    // 简单模式：只保留 Bash + Read + Edit
+    if (isEnvTruthy(process.env.CLAUDE_CODE_SIMPLE)) {
+        return filterToolsByDenyRules(
+            [BashTool, FileReadTool, FileEditTool], permissionContext
+        )
+    }
 
-  // 过滤掉被 deny 规则封禁的工具
-  let allowedTools = filterToolsByDenyRules(tools, permissionContext)
+    // 过滤掉被 deny 规则封禁的工具
+    let allowedTools = filterToolsByDenyRules(tools, permissionContext)
 
-  // REPL 模式：隐藏被 REPL 封装的原始工具
-  if (isReplModeEnabled()) {
-    allowedTools = allowedTools.filter(t => !REPL_ONLY_TOOLS.has(t.name))
-  }
+    // REPL 模式：隐藏被 REPL 封装的原始工具
+    if (isReplModeEnabled()) {
+        allowedTools = allowedTools.filter(t => !REPL_ONLY_TOOLS.has(t.name))
+    }
 
-  // 最终 isEnabled() 检查
-  return allowedTools.filter(tool => tool.isEnabled())
+    // 最终 isEnabled() 检查
+    return allowedTools.filter(tool => tool.isEnabled())
 }
 ```
 
@@ -258,15 +269,15 @@ export const getTools = (permissionContext: ToolPermissionContext): Tools => {
 
 ```typescript
 export function assembleToolPool(permissionContext, mcpTools): Tools {
-  const builtInTools = getTools(permissionContext)
-  const allowedMcpTools = filterToolsByDenyRules(mcpTools, permissionContext)
-  // 内置工具按名称排序作为连续前缀（保护 prompt cache）
-  // MCP 工具排在后面，同样按名称排序
-  // uniqBy 保证内置工具在名称冲突时优先
-  return uniqBy(
-    [...builtInTools].sort(byName).concat(allowedMcpTools.sort(byName)),
-    'name',
-  )
+    const builtInTools = getTools(permissionContext)
+    const allowedMcpTools = filterToolsByDenyRules(mcpTools, permissionContext)
+    // 内置工具按名称排序作为连续前缀（保护 prompt cache）
+    // MCP 工具排在后面，同样按名称排序
+    // uniqBy 保证内置工具在名称冲突时优先
+    return uniqBy(
+        [...builtInTools].sort(byName).concat(allowedMcpTools.sort(byName)),
+        'name',
+    )
 }
 ```
 
@@ -307,13 +318,13 @@ enforceToolResultBudget(messages, state)
 ```typescript
 // src/Tool.ts:321-336
 export type ToolResult<T> = {
-  data: T                    // 强类型的输出数据
-  newMessages?: Message[]    // 可选：附加到对话的额外消息
-  contextModifier?: (ctx: ToolUseContext) => ToolUseContext  // 可选：修改后续上下文
-  mcpMeta?: {                // 可选：MCP 协议元数据
-    _meta?: Record<string, unknown>
-    structuredContent?: Record<string, unknown>
-  }
+    data: T                    // 强类型的输出数据
+    newMessages?: Message[]    // 可选：附加到对话的额外消息
+    contextModifier?: (ctx: ToolUseContext) => ToolUseContext  // 可选：修改后续上下文
+    mcpMeta?: {                // 可选：MCP 协议元数据
+        _meta?: Record<string, unknown>
+        structuredContent?: Record<string, unknown>
+    }
 }
 ```
 
@@ -363,34 +374,34 @@ DEFAULT_MAX_RESULT_SIZE_CHARS = 50_000           // 50K
 ```typescript
 // src/utils/toolResultStorage.ts:272-334
 async function maybePersistLargeToolResult(toolResultBlock, toolName, threshold) {
-  const content = toolResultBlock.content
-  
-  // 空内容 → 注入标记（避免模型误以为是终止信号）
-  if (isToolResultContentEmpty(content)) {
-    return { ...toolResultBlock, content: `(${toolName} completed with no output)` }
-  }
-  
-  // 图片块不持久化
-  if (hasImageBlock(content)) return toolResultBlock
-  
-  // 未超阈值 → 原样返回
-  if (contentSize(content) <= threshold) return toolResultBlock
-  
-  // ✅ 超阈值 → 写入磁盘 + 生成预览
-  const result = await persistToolResult(content, toolUseId)
-  // 文件路径：~/.claude/projects/{project}/{session}/tool-results/{toolUseId}.txt
-  
-  const message = buildLargeToolResultMessage(result)
-  // 生成的消息格式：
-  // <persisted-output>
-  // Output too large (150KB). Full output saved to: /path/to/file.txt
-  //
-  // Preview (first 2KB):
-  // [前2000字节的内容]
-  // ...
-  // </persisted-output>
-  
-  return { ...toolResultBlock, content: message }
+    const content = toolResultBlock.content
+
+    // 空内容 → 注入标记（避免模型误以为是终止信号）
+    if (isToolResultContentEmpty(content)) {
+        return {...toolResultBlock, content: `(${toolName} completed with no output)`}
+    }
+
+    // 图片块不持久化
+    if (hasImageBlock(content)) return toolResultBlock
+
+    // 未超阈值 → 原样返回
+    if (contentSize(content) <= threshold) return toolResultBlock
+
+    // ✅ 超阈值 → 写入磁盘 + 生成预览
+    const result = await persistToolResult(content, toolUseId)
+    // 文件路径：~/.claude/projects/{project}/{session}/tool-results/{toolUseId}.txt
+
+    const message = buildLargeToolResultMessage(result)
+    // 生成的消息格式：
+    // <persisted-output>
+    // Output too large (150KB). Full output saved to: /path/to/file.txt
+    //
+    // Preview (first 2KB):
+    // [前2000字节的内容]
+    // ...
+    // </persisted-output>
+
+    return {...toolResultBlock, content: message}
 }
 ```
 
@@ -413,15 +424,15 @@ FileReadTool 设置 `maxResultSizeChars = Infinity`，因为将其持久化到�
 ```typescript
 // src/tools/FileReadTool/FileReadTool.ts:755-772
 async function validateContentTokens(content, ext, maxTokens?) {
-  const effectiveMaxTokens = maxTokens ?? getDefaultFileReadingLimits().maxTokens
-  const tokenEstimate = roughTokenCountEstimationForFileType(content, ext)
-  if (!tokenEstimate || tokenEstimate <= effectiveMaxTokens / 4) return
-  
-  const tokenCount = await countTokensWithAPI(content)
-  if (effectiveCount > effectiveMaxTokens) {
-    throw new MaxFileReadTokenExceededError(effectiveCount, effectiveMaxTokens)
-    // 模型会收到错误消息，建议使用 offset/limit 参数读取特定部分
-  }
+    const effectiveMaxTokens = maxTokens ?? getDefaultFileReadingLimits().maxTokens
+    const tokenEstimate = roughTokenCountEstimationForFileType(content, ext)
+    if (!tokenEstimate || tokenEstimate <= effectiveMaxTokens / 4) return
+
+    const tokenCount = await countTokensWithAPI(content)
+    if (effectiveCount > effectiveMaxTokens) {
+        throw new MaxFileReadTokenExceededError(effectiveCount, effectiveMaxTokens)
+        // 模型会收到错误消息，建议使用 offset/limit 参数读取特定部分
+    }
 }
 ```
 
@@ -432,7 +443,7 @@ FileReadTool 还有一个去重机制——如果同一文件的同一范围已�
 ```typescript
 // 去重逻辑
 if (existingState && rangeMatch && mtimeMs === existingState.timestamp) {
-  return { data: { type: 'file_unchanged', file: { filePath } } }
+    return {data: {type: 'file_unchanged', file: {filePath}}}
 }
 // 模型收到的内容：
 // "[File content unchanged since your last read — see the earlier Read result in this conversation]"
@@ -473,16 +484,16 @@ Claude Code 的权限系统是一个**多层防御**体系，不是简单的"安
 
 ```typescript
 interface Tool {
-  isReadOnly(input): boolean        // 此调用是否只读
-  isDestructive?(input): boolean    // 此调用是否不可逆（删除/覆盖/发送）
-  isConcurrencySafe(input): boolean // 此调用是否可并发
-  isOpenWorld?(input): boolean      // 是否访问外部系统
-  
-  // 将输入转换为安全分类器可理解的格式
-  toAutoClassifierInput(input): unknown
-  
-  // 工具特定的权限检查（在通用检查之前执行）
-  checkPermissions(input, context): Promise<PermissionResult>
+    isReadOnly(input): boolean        // 此调用是否只读
+    isDestructive?(input): boolean    // 此调用是否不可逆（删除/覆盖/发送）
+    isConcurrencySafe(input): boolean // 此调用是否可并发
+    isOpenWorld?(input): boolean      // 是否访问外部系统
+
+    // 将输入转换为安全分类器可理解的格式
+    toAutoClassifierInput(input): unknown
+
+    // 工具特定的权限检查（在通用检查之前执行）
+    checkPermissions(input, context): Promise<PermissionResult>
 }
 ```
 
@@ -496,21 +507,21 @@ interface Tool {
 ```typescript
 // src/types/permissions.ts
 type PermissionResult =
-  | { behavior: 'allow'; updatedInput?: Input }      // 放行（可能修改输入）
-  | { behavior: 'ask'; message: string }             // 询问用户
-  | { behavior: 'deny'; message: string }            // 拒绝
-  | { behavior: 'passthrough'; message: string }     // 交给通用权限系统
+    | { behavior: 'allow'; updatedInput?: Input }      // 放行（可能修改输入）
+    | { behavior: 'ask'; message: string }             // 询问用户
+    | { behavior: 'deny'; message: string }            // 拒绝
+    | { behavior: 'passthrough'; message: string }     // 交给通用权限系统
 ```
 
 ### 4.4 五种权限模式
 
 ```typescript
-type PermissionMode = 
-  | 'default'           // 默认：危险操作询问用户
-  | 'plan'              // 计划模式：所有写操作都询问
-  | 'acceptEdits'       // 接受编辑：文件修改自动允许，其他危险操作询问
-  | 'bypassPermissions' // 绕过权限：一切自动允许（需要明确启用）
-  | 'auto'              // 自动模式：使用 AI 分类器判断安全性
+type PermissionMode =
+    | 'default'           // 默认：危险操作询问用户
+    | 'plan'              // 计划模式：所有写操作都询问
+    | 'acceptEdits'       // 接受编辑：文件修改自动允许，其他危险操作询问
+    | 'bypassPermissions' // 绕过权限：一切自动允许（需要明确启用）
+    | 'auto'              // 自动模式：使用 AI 分类器判断安全性
 ```
 
 ### 4.5 `checkPermissions` 的工具级实现对比
@@ -518,9 +529,11 @@ type PermissionMode =
 **FileReadTool — 简单委托**：
 
 ```typescript
-async checkPermissions(input, context) {
-  return checkReadPermissionForTool(FileReadTool, input, appState.toolPermissionContext)
-  // 内部检查：路径是否在允许的目录内、是否匹配 deny 规则
+async
+checkPermissions(input, context)
+{
+    return checkReadPermissionForTool(FileReadTool, input, appState.toolPermissionContext)
+    // 内部检查：路径是否在允许的目录内、是否匹配 deny 规则
 }
 ```
 
@@ -528,25 +541,25 @@ async checkPermissions(input, context) {
 
 ```typescript
 async function bashToolHasPermission(input, context) {
-  // 1. 解析命令 AST
-  const parsed = await parseForSecurity(input.command)
-  
-  // 2. 检查只读约束
-  const readOnlyResult = checkReadOnlyConstraints(input, ...)
-  
-  // 3. 检查命令级别的 allow/deny 规则
-  //    例如：Bash(git *) → allow, Bash(rm -rf *) → deny
-  
-  // 4. 路径验证（43KB 的 pathValidation.ts）
-  //    检查命令访问的文件路径是否在允许范围内
-  
-  // 5. sed 编辑验证（21KB 的 sedValidation.ts）
-  //    sed 命令的特殊处理，预览编辑结果
-  
-  // 6. 安全性分析（102KB 的 bashSecurity.ts）
-  //    静态分析命令的危险性
-  
-  // 返回 allow / ask / deny
+    // 1. 解析命令 AST
+    const parsed = await parseForSecurity(input.command)
+
+    // 2. 检查只读约束
+    const readOnlyResult = checkReadOnlyConstraints(input, ...)
+
+    // 3. 检查命令级别的 allow/deny 规则
+    //    例如：Bash(git *) → allow, Bash(rm -rf *) → deny
+
+    // 4. 路径验证（43KB 的 pathValidation.ts）
+    //    检查命令访问的文件路径是否在允许范围内
+
+    // 5. sed 编辑验证（21KB 的 sedValidation.ts）
+    //    sed 命令的特殊处理，预览编辑结果
+
+    // 6. 安全性分析（102KB 的 bashSecurity.ts）
+    //    静态分析命令的危险性
+
+    // 返回 allow / ask / deny
 }
 ```
 
@@ -555,37 +568,38 @@ async function bashToolHasPermission(input, context) {
 ```typescript
 // src/services/tools/toolExecution.ts:599-680（简化）
 async function checkPermissionsAndCallTool(tool, toolUseID, input, context, ...) {
-  // Step 1: Zod Schema 验证
-  const parsedInput = tool.inputSchema.safeParse(input)
-  if (!parsedInput.success) return [errorMessage]
-  
-  // Step 2: 工具自身的输入验证
-  const isValidCall = await tool.validateInput?.(parsedInput.data, context)
-  if (isValidCall?.result === false) return [errorMessage]
-  
-  // Step 3: 预启动安全分类器（BashTool 专用，异步并行）
-  startSpeculativeClassifierCheck(...)
-  
-  // Step 4: 运行 PreToolUse Hooks（用户自定义脚本）
-  for await (const result of runPreToolUseHooks(...)) { ... }
-  
-  // Step 5: 工具特定的权限检查
-  const permResult = await tool.checkPermissions(input, context)
-  
-  // Step 6: 通用权限决策（canUseTool）
-  //   - 检查权限模式（default/plan/auto/...）
-  //   - 匹配 allow/deny/ask 规则
-  //   - auto 模式下调用 AI 分类器
-  //   - 如有必要，显示权限对话框等待用户确认
-  const decision = await canUseTool(tool, input, permResult, ...)
-  
-  // Step 7: 执行
-  if (decision.behavior === 'allow') {
-    const result = await tool.call(decision.updatedInput, context, ...)
-    // Step 8: PostToolUse Hooks
-    await runPostToolUseHooks(...)
-    return [toolResultMessage]
-  }
+    // Step 1: Zod Schema 验证
+    const parsedInput = tool.inputSchema.safeParse(input)
+    if (!parsedInput.success) return [errorMessage]
+
+    // Step 2: 工具自身的输入验证
+    const isValidCall = await tool.validateInput?.(parsedInput.data, context)
+    if (isValidCall?.result === false) return [errorMessage]
+
+    // Step 3: 预启动安全分类器（BashTool 专用，异步并行）
+    startSpeculativeClassifierCheck(...)
+
+    // Step 4: 运行 PreToolUse Hooks（用户自定义脚本）
+    for await (const result of runPreToolUseHooks(...)) { ...
+    }
+
+    // Step 5: 工具特定的权限检查
+    const permResult = await tool.checkPermissions(input, context)
+
+    // Step 6: 通用权限决策（canUseTool）
+    //   - 检查权限模式（default/plan/auto/...）
+    //   - 匹配 allow/deny/ask 规则
+    //   - auto 模式下调用 AI 分类器
+    //   - 如有必要，显示权限对话框等待用户确认
+    const decision = await canUseTool(tool, input, permResult, ...)
+
+    // Step 7: 执行
+    if (decision.behavior === 'allow') {
+        const result = await tool.call(decision.updatedInput, context, ...)
+        // Step 8: PostToolUse Hooks
+        await runPostToolUseHooks(...)
+        return [toolResultMessage]
+    }
 }
 ```
 
@@ -593,14 +607,14 @@ async function checkPermissionsAndCallTool(tool, toolUseID, input, context, ...)
 
 ```typescript
 type PermissionRuleSource =
-  | 'userSettings'      // ~/.claude/settings.json
-  | 'projectSettings'   // .claude/settings.json
-  | 'localSettings'     // .claude/settings.local.json
-  | 'flagSettings'      // GrowthBook feature flags
-  | 'policySettings'    // 组织级策略
-  | 'cliArg'            // CLI 参数 --allowedTools
-  | 'command'           // 命令行指定
-  | 'session'           // 会话内临时授权（用户点击"允许一次"）
+    | 'userSettings'      // ~/.claude/settings.json
+    | 'projectSettings'   // .claude/settings.json
+    | 'localSettings'     // .claude/settings.local.json
+    | 'flagSettings'      // GrowthBook feature flags
+    | 'policySettings'    // 组织级策略
+    | 'cliArg'            // CLI 参数 --allowedTools
+    | 'command'           // 命令行指定
+    | 'session'           // 会话内临时授权（用户点击"允许一次"）
 ```
 
 规则格式示例：
@@ -608,9 +622,18 @@ type PermissionRuleSource =
 ```json
 {
   "permissions": {
-    "allow": ["Bash(git *)", "Bash(npm test)", "Read(/src/**)"],
-    "deny": ["Bash(rm -rf *)", "Write(/etc/**)"],
-    "ask": ["Bash(curl *)"]
+    "allow": [
+      "Bash(git *)",
+      "Bash(npm test)",
+      "Read(/src/**)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Write(/etc/**)"
+    ],
+    "ask": [
+      "Bash(curl *)"
+    ]
   }
 }
 ```
@@ -642,43 +665,46 @@ from pydantic import BaseModel
 from typing import Any, Optional
 from enum import Enum
 
+
 class ToolSafety(str, Enum):
-    READ_ONLY = "read_only"       # 只读操作，可并发
-    WRITE = "write"               # 写操作，需确认
-    DESTRUCTIVE = "destructive"   # 不可逆操作，强制确认
-    EXTERNAL = "external"         # 外部系统交互
+    READ_ONLY = "read_only"  # 只读操作，可并发
+    WRITE = "write"  # 写操作，需确认
+    DESTRUCTIVE = "destructive"  # 不可逆操作，强制确认
+    EXTERNAL = "external"  # 外部系统交互
+
 
 class ToolResult(BaseModel):
     """Tool 执行结果的统一包装"""
-    data: Any                     # 强类型的输出数据
-    summary: str                  # 发送给 LLM 的精简摘要
-    full_output: Optional[str]    # 完整输出（可能被截断/持久化）
+    data: Any  # 强类型的输出数据
+    summary: str  # 发送给 LLM 的精简摘要
+    full_output: Optional[str]  # 完整输出（可能被截断/持久化）
     error: Optional[str] = None
+
 
 class BaseTool(BaseModel):
     """Tool 基类 — 借鉴 Claude Code 的对象字面量模式"""
     name: str
-    description: str              # 发送给 LLM 的描述
-    
+    description: str  # 发送给 LLM 的描述
+
     # Schema（LangGraph 通常用 Pydantic 模型）
     input_schema: type[BaseModel]
-    
+
     # 安全标记 — 借鉴 Claude Code 的 Fail-Closed 默认值
     default_safety: ToolSafety = ToolSafety.WRITE  # 默认假设写操作
-    max_output_chars: int = 30_000                  # 默认 30K 截断阈值
-    
+    max_output_chars: int = 30_000  # 默认 30K 截断阈值
+
     def get_safety(self, input: BaseModel) -> ToolSafety:
         """输入依赖的安全级别（可被子类覆盖）"""
         return self.default_safety
-    
+
     def validate_input(self, input: BaseModel) -> Optional[str]:
         """业务规则验证，返回错误消息或 None"""
         return None
-    
+
     async def execute(self, input: BaseModel, context: "AgentContext") -> ToolResult:
         """核心执行逻辑"""
         raise NotImplementedError
-    
+
     def format_for_llm(self, result: ToolResult) -> str:
         """将结果格式化为 LLM 可理解的文本"""
         if result.error:
@@ -698,17 +724,18 @@ class BaseTool(BaseModel):
 class ToolRegistry:
     def __init__(self):
         self._tools: dict[str, BaseTool] = {}
-    
+
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool
-    
+
     def get_tools(self, context: "AgentContext") -> list[BaseTool]:
         """带过滤的工具列表（借鉴三层过滤）"""
         return [
             t for t in self._tools.values()
             if t.is_enabled(context)
-            and t.name not in context.denied_tools
+               and t.name not in context.denied_tools
         ]
+
 
 # 显式注册
 registry = ToolRegistry()
