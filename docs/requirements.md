@@ -257,11 +257,13 @@ Agent: 我将逐个检查拓扑中所有设备的 OSPF 邻居状态。
 
 #### F-002：设备命令执行
 
-| 字段       | 内容                                                        |
-|----------|-----------------------------------------------------------|
-| **描述**   | Agent 能够在指定路由器上执行 CLI 命令并获取输出                             |
-| **验收标准** | 1. 支持查询命令<br/>2. 支持配置命令<br/>3. 命令执行有超时保护<br/>4. 返回完整的命令输出 |
-| **技术方案** | DeviceTool，底层通过 SSH 连接设备                                  |
+| 字段       | 内容                                                                                    |
+|----------|---------------------------------------------------------------------------------------|
+| **描述**   | Agent 能够在指定路由器上执行 CLI 命令并获取输出                                                         |
+| **验收标准** | 1. 支持查询命令<br/>2. 支持配置命令（事务性保障）<br/>3. 支持操作性命令（断连韧性）<br/>4. 命令执行有超时保护<br/>5. 返回完整的命令输出 |
+| **技术方案** | 三个 LangGraph Tool 包装现有 `infra/operations/` 执行引擎（详见 §6.5）；底层通过 Scrapli + asyncssh 连接设备 |
+| **工具入参** | 统一使用 **设备名**（如 `R1`）而非设备 IP，工具内部通过拓扑数据库解析为实际 IP                                       |
+| **输出格式** | 内部使用结构化数据（Pydantic 模型，供前端卡片展示）；发给 LLM 使用精简纯文本摘要（节省 token）                             |
 
 #### F-003：拓扑感知
 
@@ -472,14 +474,14 @@ links:
 
 ### 6.3 技术栈约束
 
-| 层次       | 选择           | 确定程度  |
-|----------|--------------|-------|
-| 后端语言     | Python 3.11+ | ✅ 已确定 |
-| Agent 编排 | LangGraph    | ✅ 已确定 |
-| Web 框架   | FastAPI      | ✅ 已确定 |
-| 前端框架     | Vue 3        | ✅ 已确定 |
-| 设备连接     | 待定           | ❓ 待确认 |
-| 数据库      | 待定           | ❓ 待确认 |
+| 层次       | 选择                 | 确定程度  |
+|----------|--------------------|-------|
+| 后端语言     | Python 3.11+       | ✅ 已确定 |
+| Agent 编排 | LangGraph          | ✅ 已确定 |
+| Web 框架   | FastAPI            | ✅ 已确定 |
+| 前端框架     | Vue 3              | ✅ 已确定 |
+| 设备连接     | Scrapli + asyncssh | ✅ 已确定 |
+| 数据库      | 待定                 | ❓ 待确认 |
 
 ### 6.4 前后端通信协议
 
@@ -502,6 +504,61 @@ links:
 | `tool_call_result` | 服务端 → 客户端 | 工具调用结果，包含输出内容和耗时                                               |
 | `agent_done`       | 服务端 → 客户端 | 本轮 Agent 执行结束，携带终止原因（`completed` / `max_iterations` / `error`） |
 | `error`            | 服务端 → 客户端 | 错误通知，包含错误码和用户可读的错误描述                                           |
+
+### 6.5 工具系统架构
+
+> 参考实现：Claude Code 的 Tool 定义与注册机制（详见 `references/03-tool-definition-and-registration.md`）  
+> 复用代码：TTools 系统的 `infra/` 层（Transport + Operations + 异常体系 + 连接池）
+
+#### 6.5.1 工具分类
+
+工具按设备操作类型分为三类，复用现有 `infra/operations/` 中的执行引擎：
+
+| 工具                 | 复用引擎                | 安全级别 | 可并发 | 说明                             |
+|--------------------|---------------------|------|-----|--------------------------------|
+| `query_device`     | `execute_query`     | 只读   | ✅   | display 类查询命令，支持 TextFSM 结构化解析 |
+| `configure_device` | `execute_configure` | 写入   | ❌   | 配置下发，事务性保障（出错自动丢弃未提交修改）        |
+| `operate_device`   | `execute_operate`   | 写入   | ❌   | reboot/save/ping 等操作性命令，断连韧性   |
+| `topology_query`   | 新建（查询数据库）           | 只读   | ✅   | 查询拓扑信息（设备列表、互联关系、接口详情）         |
+
+#### 6.5.2 工具入参规范
+
+所有设备操作工具统一使用 **设备名**（如 `R1`、`R2`）而非设备 IP 作为入参：
+
+- 对 LLM 更友好，减少 IP 地址混淆的幻觉风险
+- 工具内部通过拓扑数据库将设备名解析为实际 IP + 凭据，再调用 `TransportPool.acquire()` 获取连接
+- System Prompt 中已注入拓扑摘要，LLM 可直接使用设备名
+
+#### 6.5.3 工具输出双层格式化
+
+借鉴 Claude Code 的 **两级输出格式化** 设计：
+
+1. **内部层**：工具返回 Pydantic 结构化模型（复用现有 `ConfigureResult` / `QueryResult` / `OperateResult`），供前端卡片展示和日志记录
+2. **LLM 层**：通过 `format_for_llm()` 方法将结构化数据转换为精简纯文本，节省 token
+
+#### 6.5.4 大型输出处理
+
+设备命令输出（如 `display current-configuration`）可能非常长。借鉴 Claude Code 的策略：
+
+- 每个工具声明 `max_output_chars` 阈值（默认 30,000 字符）
+- 超过阈值时不简单截断，而是发送前 2K 字符的预览 + 提示 LLM 可通过工具查看完整内容
+- 空输出始终返回有意义的标记文本（如 `"命令执行成功，无输出"`），避免 LLM 误判为对话结束
+
+#### 6.5.5 复用代码清单
+
+以下组件从现有 TTools 系统直接复用（源码位于 `temp/`）：
+
+| 组件           | 文件                            | 说明                                                      |
+|--------------|-------------------------------|---------------------------------------------------------|
+| Transport 协议 | `infra/transport/protocol.py` | `DeviceTransport` 接口 + `CommandResult` 数据类              |
+| SSH 实现       | `infra/transport/scrapli.py`  | Scrapli + VRP 的异步 SSH 实现，已处理认证/超时/断连异常映射                |
+| Mock 传输      | `infra/transport/mock.py`     | JSON 模拟传输，用于开发和测试                                       |
+| 传输工厂         | `infra/transport/factory.py`  | 根据配置选择 scrapli/mock（需适配配置源）                             |
+| 异常体系         | `infra/exceptions.py`         | 5 种设备异常类型：Connection/Auth/Timeout/Unreachable/Execution |
+| 3 个执行引擎      | `infra/operations/command.py` | configure/query/operate，包含事务回滚、确认提示处理、断连韧性              |
+| 返回值模型        | `infra/operations/schemas.py` | `ConfigureResult` / `QueryResult` / `OperateResult`     |
+| TextFSM 解析器  | `infra/operations/parser.py`  | 命令输出结构化解析 + 模板映射                                        |
+| 连接池          | `mcp_servers/.../pool.py`     | `TransportPool`，带 TTL 自动回收，按 device_ip 缓存               |
 
 ---
 
