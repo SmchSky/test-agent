@@ -5,7 +5,7 @@ import json
 import logging
 from typing import Any
 
-from zai import ZhipuAiClient
+from zai._client import ZhipuAiClient
 
 from core.config import settings
 from llm.base import LLMProvider, LLMResponse
