@@ -10,6 +10,6 @@ def create_llm_provider() -> LLMProvider:
     provider = settings.llm_provider.lower()
     if provider == "mock":
         return MockLLMProvider()
-    if provider in {"zai", "glm", "zhipu"}:
+    if provider in {"zai"}:
         return ZaiLLMProvider()
     raise ValueError(f"不支持的 LLM_PROVIDER: {settings.llm_provider}")
