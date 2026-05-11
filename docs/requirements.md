@@ -41,6 +41,7 @@ Test Agent 是一个针对华为 NE 高端路由器设计的 **高权限自主 A
 - 用户权限管理（RBAC 角色体系）
 - 计费与 Token 用量限制
 - 自动化测试用例管理系统
+- 敏感信息加密（设备密码明文存储，仅限内网环境使用）
 
 ---
 
@@ -389,8 +390,8 @@ devices:
       protocol: ssh           # ssh / telnet / netconf
       host: 10.10.10.1
       port: 22
-      username: admin
-      password: "${R1_PASSWORD}"  # 支持环境变量引用
+      username: huawei
+      password: Huawei@123
 
   - name: R2
     type: router
@@ -400,8 +401,8 @@ devices:
       protocol: ssh
       host: 10.10.10.2
       port: 22
-      username: admin
-      password: "${R2_PASSWORD}"
+      username: huawei
+      password: Huawei@123
 
   - name: R3
     type: router
@@ -411,8 +412,8 @@ devices:
       protocol: ssh
       host: 10.10.10.3
       port: 22
-      username: admin
-      password: "${R3_PASSWORD}"
+      username: huawei
+      password: Huawei@123
 
 # 互联关系
 links:
@@ -443,6 +444,14 @@ links:
         ip: 10.1.3.2/30
     description: "R2-R3 互联"
 ```
+
+### 5.2 会话与拓扑的关系
+
+| 规则          | 说明                                                          |
+|-------------|-------------------------------------------------------------|
+| **引用与操作分离** | 一个会话可以引用多个拓扑（如用户附加专业领域知识文档中的拓扑作为参考），但只能**操作一个拓扑**（项目拓扑）中的设备 |
+| **拓扑独占**    | 同一拓扑同一时间只能被一个用户使用，避免多用户并发配置同一台设备引发冲突                        |
+| **无切换拓扑**   | 不存在会话中切换拓扑的场景，每个会话绑定的操作拓扑在创建时确定，会话全程不变                      |
 
 ---
 
